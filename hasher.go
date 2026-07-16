@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/blake2s"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -27,6 +29,9 @@ const (
 	AlgoSHA_512
 	AlgoSHA_512_224
 	AlgoSHA_512_256
+	AlgoBlake2b_256
+	AlgoBlake2b_512
+	AlgoBlake2s_256
 )
 
 // HashConfig holds the parsed hash algorithm configuration.
@@ -68,6 +73,12 @@ func (c HashConfig) FullHexLen() int {
 		return sha512.New512_224().Size() * 2
 	case AlgoSHA_512_256:
 		return sha512.New512_256().Size() * 2
+	case AlgoBlake2b_256:
+		return blake2b.Size256 * 2
+	case AlgoBlake2b_512:
+		return blake2b.Size * 2
+	case AlgoBlake2s_256:
+		return blake2s.Size * 2
 	default:
 		return 0
 	}
@@ -96,6 +107,15 @@ func (c HashConfig) newHasher() hash.Hash {
 		return sha512.New512_224()
 	case AlgoSHA_512_256:
 		return sha512.New512_256()
+	case AlgoBlake2b_256:
+		h, _ := blake2b.New256(nil)
+		return h
+	case AlgoBlake2b_512:
+		h, _ := blake2b.New512(nil)
+		return h
+	case AlgoBlake2s_256:
+		h, _ := blake2s.New256(nil)
+		return h
 	default:
 		panic("unknown hash algorithm")
 	}
@@ -194,8 +214,20 @@ func ParseHashConfig(raw string) (HashConfig, error) {
 	case "sha-512/256":
 		algo = AlgoSHA_512_256
 		canonical = "SHA-512/256"
+	case "blake2b":
+		algo = AlgoBlake2b_256
+		canonical = "blake2b"
+	case "blake2b-256":
+		algo = AlgoBlake2b_256
+		canonical = "blake2b-256"
+	case "blake2b-512":
+		algo = AlgoBlake2b_512
+		canonical = "blake2b-512"
+	case "blake2s":
+		algo = AlgoBlake2s_256
+		canonical = "blake2s"
 	default:
-		return HashConfig{}, fmt.Errorf("unsupported hash algorithm: %q\nsupported: sha3-224, sha3-256, sha3-384, sha3-512, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256", algoPart)
+		return HashConfig{}, fmt.Errorf("unsupported hash algorithm: %q\n  Fast:  blake2b, blake2b-512, blake2s\n  Std:   sha3-224, sha3-256, sha3-384, sha3-512, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256", algoPart)
 	}
 
 	cfg := HashConfig{Algo: algo, AlgoName: canonical}
@@ -224,11 +256,17 @@ func ParseHashConfig(raw string) (HashConfig, error) {
 //   "sha384" → "sha-384", "sha512" → "sha-512"
 //   "sha3224" → "sha3-224", "sha3512" → "sha3-512"
 //   "sha512/224" → "sha-512/224"
+//   "blake2b256" → "blake2b-256", "blake2b512" → "blake2b-512"
 func normaliseAlgoName(s string) string {
 	s = strings.ToLower(s)
 	s = strings.ReplaceAll(s, "_", "-")
 
-	// Already has a dash — nothing to normalise
+	// BLAKE2b variants: "blake2b256" → "blake2b-256", "blake2b512" → "blake2b-512"
+	if strings.HasPrefix(s, "blake2b") && len(s) > 7 && !strings.Contains(s, "-") {
+		return "blake2b-" + s[7:]
+	}
+
+	// Already has a dash — nothing to normalise further
 	if strings.Contains(s, "-") {
 		return s
 	}

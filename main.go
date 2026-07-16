@@ -217,14 +217,18 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, `Usage: fileRenamer [options] [pattern ...]
 
 Rename files to their cryptographic hash, with deduplication.
+  Fast (BLAKE2 family — software-optimized, ~5× faster than SHA-2):
+    blake2b                            256-bit
+    blake2b-512                        512-bit
+    blake2s                            256-bit
 
-Hash algorithms (case-insensitive, SHA-2 optional dash):
-  sha3-224         (default)     SHA-224 / sha224
-  sha3-256                        SHA-256 / sha256
-  sha3-384                        SHA-384 / sha384
-  sha3-512                        SHA-512 / sha512
-                                  SHA-512/224
-                                  SHA-512/256
+  Standard (SHA-2 / SHA-3):
+    sha3-224         (default)    SHA-224 / sha224
+    sha3-256                       SHA-256 / sha256
+    sha3-384                       SHA-384 / sha384
+    sha3-512                       SHA-512 / sha512
+    sha-512/224                    SHA-512/224
+    sha-512/256                    SHA-512/256
 
   Truncation: algo:N  —  e.g. sha3-224:16 (first 16 hex chars)
   ⚠  N ≤ 8 triggers a collision-risk confirmation prompt.
@@ -256,12 +260,13 @@ Collision resolution:
   3. --force                           →  always delete newer, skip sha3-512 check
 
 Examples:
-  fileRenamer                                  Process ./ with sha3-224
+  fileRenamer                                  Process ./ with sha3-224 (default)
+  fileRenamer -hash blake2b                   Faster: BLAKE2b (~5× faster)
   fileRenamer -hash SHA-256                    Use SHA-256
-  fileRenamer -hash sha3-224:16                Use first 16 hex chars of sha3-224
+  fileRenamer -hash sha3-224:16                First 16 hex chars of sha3-224
   fileRenamer --force ./*.jpg                  Deduplicate JPGs with force
   fileRenamer -r -e '\.go$'                   Recursively rename all .go files
-  fileRenamer -hash sha256 *.txt               Use SHA-256 on .txt files
+  fileRenamer -hash blake2b *.txt              BLAKE2b on .txt files
 `,
 )
 }
