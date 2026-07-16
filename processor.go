@@ -94,10 +94,26 @@ func collectFiles(patterns []string, cfg *Config) ([]string, error) {
 		return listDirFiles(cfg.SearchDir, cfg.Recursive)
 	}
 
-	// Glob mode: each arg is a glob pattern
+	// Glob mode: each arg is a glob pattern or directory path
 	seen := map[string]bool{}
 	var files []string
 	for _, pat := range patterns {
+		// Check if the arg is an existing directory — if so, list its files
+		if info, err := os.Stat(pat); err == nil && info.IsDir() {
+			dirFiles, err := listDirFiles(pat, cfg.Recursive)
+			if err != nil {
+				return nil, fmt.Errorf("reading directory %q: %w", pat, err)
+			}
+			for _, m := range dirFiles {
+				abs, _ := filepath.Abs(m)
+				if !seen[abs] {
+					seen[abs] = true
+					files = append(files, abs)
+				}
+			}
+			continue
+		}
+
 		matched, err := matchGlob(pat)
 		if err != nil {
 			return nil, fmt.Errorf("glob %q: %w (try --regex/-e for regex mode)", pat, err)
