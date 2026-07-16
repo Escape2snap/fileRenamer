@@ -5,17 +5,17 @@
 ## 快速开始
 
 ```bash
-# 处理当前目录所有文件（默认 sha3-224）
+# 处理当前目录所有文件（默认 blake2b — 快速）
 ./fileRenamer
-
-# 用更快的 BLAKE2b（~5× 更快）
-./fileRenamer -hash blake2b
 
 # 处理所有 JPG 文件
 ./fileRenamer ./*.jpg
 
-# 递归处理所有 .go 文件，用 BLAKE2b
-./fileRenamer -hash blake2b -r -e '\.go$'
+# 递归处理所有 .go 文件
+./fileRenamer -r -e '\.go$'
+
+# 用 SHA3-224（默认是 blake2b，加 -hash 切换）
+./fileRenamer -hash sha3-224
 
 # 强制删除重复（跳过 sha3-512 二次验证）
 ./fileRenamer --force *.txt
@@ -40,14 +40,12 @@ GOOS=darwin  GOARCH=arm64 go build -o fileRenamer .
 
 ## 支持的哈希算法
 
-## 支持的哈希算法
-
 | 算法 | CLI 名称（大小写不敏感） | 完整长度（hex） | 速度 |
 |------|--------------------------|----------------|------|
-| **BLAKE2b** | `blake2b` / `blake2b256` | 64 | ⚡ 最快（默认候选） |
+| **BLAKE2b** | `blake2b` / `blake2b256` | 64 | ⚡ 最快（默认） |
 | BLAKE2b-512 | `blake2b-512` / `blake2b512` | 128 | ⚡ 快 |
 | BLAKE2s | `blake2s` | 64 | ⚡ 快（32位友好） |
-| SHA3-224 | `sha3-224` | 56 | 🐢 标准（当前默认） |
+| SHA3-224 | `sha3-224` | 56 | 🐢 标准 |
 | SHA3-256 | `sha3-256` | 64 | 🐢 标准 |
 | SHA3-384 | `sha3-384` | 96 | 🐢 标准 |
 | SHA3-512 | `sha3-512` | 128 | 🐢 标准 |
@@ -71,7 +69,7 @@ GOOS=darwin  GOARCH=arm64 go build -o fileRenamer .
 
 ## 去重逻辑
 
-1. 计算文件**主哈希**（可配置，默认 sha3-224）
+1. 计算文件**主哈希**（可配置，默认 blake2b）
 2. 若主哈希相同，计算 **sha3-512** 二次验证
 3. sha3-512 相同 → 真正重复 → **删除创建时间更晚的文件**
 4. sha3-512 不同 → 哈希碰撞（极小概率）→ **告警 + 保留原文件**
@@ -81,7 +79,7 @@ GOOS=darwin  GOARCH=arm64 go build -o fileRenamer .
 ## 完整选项
 
 ```
--hash <algo>      哈希算法（默认 "sha3-224"）
+-hash <algo>      哈希算法（默认 "blake2b"）
 -force, -f        强制删除碰撞文件
 -recursive, -r    递归子目录
 -regex, -e        正则匹配（grep 风格）

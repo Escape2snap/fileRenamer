@@ -69,7 +69,7 @@ func main() {
 
 func parseFlags() *Config {
 	// Default config
-	hashStr := flag.String("hash", "sha3-224", "Hash algorithm (e.g. sha3-224, SHA-256, sha3-224:16)")
+	hashStr := flag.String("hash", "blake2b", "Hash algorithm (e.g. sha3-224, SHA-256, sha3-224:16)")
 	// Using env var or default
 	force := flag.Bool("force", false, "Force-delete on collision even if sha3-512 differs")
 	forceF := flag.Bool("f", false, "Alias for --force")
@@ -218,12 +218,12 @@ func printUsage() {
 
 Rename files to their cryptographic hash, with deduplication.
   Fast (BLAKE2 family — software-optimized, ~5× faster than SHA-2):
-    blake2b                            256-bit
-    blake2b-512                        512-bit
-    blake2s                            256-bit
+    blake2b          (default)    256-bit
+    blake2b-512                   512-bit
+    blake2s                       256-bit
 
   Standard (SHA-2 / SHA-3):
-    sha3-224         (default)    SHA-224 / sha224
+    sha3-224                       SHA-224 / sha224
     sha3-256                       SHA-256 / sha256
     sha3-384                       SHA-384 / sha384
     sha3-512                       SHA-512 / sha512
@@ -234,7 +234,7 @@ Rename files to their cryptographic hash, with deduplication.
   ⚠  N ≤ 8 triggers a collision-risk confirmation prompt.
 
 Options:
-  -hash <algo>      Hash algorithm (default: "sha3-224")
+  -hash <algo>      Hash algorithm (default: "blake2b")
   -force, -f        Force-delete on collision even if sha3-512 differs
   -recursive, -r    Process subdirectories recursively
   -regex, -e        Use extended regex for file matching (like grep -E)
@@ -260,13 +260,11 @@ Collision resolution:
   3. --force                           →  always delete newer, skip sha3-512 check
 
 Examples:
-  fileRenamer                                  Process ./ with sha3-224 (default)
-  fileRenamer -hash blake2b                   Faster: BLAKE2b (~5× faster)
+  fileRenamer                                  Process ./ with blake2b (default)
   fileRenamer -hash SHA-256                    Use SHA-256
   fileRenamer -hash sha3-224:16                First 16 hex chars of sha3-224
   fileRenamer --force ./*.jpg                  Deduplicate JPGs with force
   fileRenamer -r -e '\.go$'                   Recursively rename all .go files
-  fileRenamer -hash blake2b *.txt              BLAKE2b on .txt files
 `,
 )
 }
